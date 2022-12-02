@@ -55,6 +55,8 @@ def do_mapper(data: ndarray, desc: str):
     filename = f"kmapper_weather_{desc}"
     _ = mapper.visualize(graph, path_html=os.path.join(output_path, filename), title=desc)
 
+    # Done
+    print(f"do_mapper: Done")
 
 def main():
     day = 9
