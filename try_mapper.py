@@ -2,12 +2,16 @@ import kmapper as km
 import numpy as np
 import os
 import glob
+
+import umap
 from numpy import ndarray
 from sklearn import manifold
+from umap import UMAP
+from sklearn.cluster import DBSCAN
 import time
 
 
-def get_flat_data(month: int, day: int, size:int) -> ndarray:
+def get_flat_data(month: int, day: int, size: int=0) -> ndarray:
     """
     This gets radar data from the data_folder specified below, and stacks these into an ndarray, then returns the result
     :param month: the month to get the data from
@@ -18,6 +22,8 @@ def get_flat_data(month: int, day: int, size:int) -> ndarray:
     result = []
     data_folder = f"/home/rolan/data1/Weather-Datasets/npy-data/{month:02}/{day:02}"
     files = glob.glob(os.path.join(data_folder, "*"))
+    if size == 0:
+        size = len(files)
     for count, file in enumerate(files):
         if count >= size:
             break  # since we keep crashing when at 111 days, let's start with a small number first.
@@ -33,7 +39,7 @@ def do_mapper(data: ndarray, desc: str):
 
     # Compute projected_data using mapper.fit_transform
     print(f"Compute projected data using mapper.fit_transform")
-    projected_data = mapper.fit_transform(data, projection=manifold.TSNE)
+    projected_data = mapper.fit_transform(X=data, projection=umap.UMAP())
     print(f"projected_data has shape: {projected_data.shape}")
 
 
@@ -43,7 +49,7 @@ def do_mapper(data: ndarray, desc: str):
     # Run the mapper algorithm
     print(f"Running the mapper algorithm")
     start = time.time()
-    graph = mapper.map(projected_data, data, cover=cover)
+    graph = mapper.map(projected_data, data, clusterer=DBSCAN(eps=0.000000005, min_samples=1), cover=cover)
     end = time.time()
     print(f"mapper took {(end-start)/60} minutes.")
 
@@ -52,21 +58,21 @@ def do_mapper(data: ndarray, desc: str):
         os.makedirs(output_path)
 
     # Visualize and save html
-    filename = f"kmapper_weather_{desc}"
+    filename = f"kmapper_weather_{desc}.html"
     _ = mapper.visualize(graph, path_html=os.path.join(output_path, filename), title=desc)
 
     # Done
     print(f"do_mapper: Done")
 
+
 def main():
     day = 9
     month = 1
-    size = 10
+    size = 0
     data = get_flat_data(month=month, day=day, size=size)
     print(f"data has shape: {data.shape}")
     desc = f"Subic_p_{month}_{day}_size_{size}"
     do_mapper(data, desc)
-
 
 
 if __name__ == "__main__":
